@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Exam {
+  id           Int            @id @default(autoincrement())
+  userId       Int            @map("user_id")
+  name         String         @db.VarChar(255)
+  description  String?        @db.Text
+  examDateTime DateTime       @map("exam_datetime") @db.DateTime(0)
+  isDone       Boolean        @default(false) @map("is_done")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  reminders    ExamReminder[]
+
+  @@index([examDateTime], map: "idx_exam_datetime")
+  @@index([userId], map: "idx_user_id")
+  @@map("exams")
+}
+
+model ExamReminder {
+  id                  Int      @id @default(autoincrement())
+  examId              Int      @map("exam_id")
+  remindBeforeMinutes Int      @map("remind_before_minutes")
+  isSent              Boolean  @default(false) @map("is_sent")
+  createdAt           DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  exam                Exam     @relation(fields: [examId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_exam_reminder_exam")
+
+  @@index([examId], map: "idx_exam_id")
+  @@index([isSent], map: "idx_is_sent")
+  @@map("exam_reminders")
+}
