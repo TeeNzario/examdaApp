@@ -27,12 +27,23 @@ Users can create, edit, and view upcoming exams with a clean and simple interfac
 
 1. Install Dependencies
 ```bash
+cd client
 npm install
 ```
 
 2. Start
 ```bash
 npm start
+```
+3. Install Dependencies
+```bash
+cd server  
+npm install
+```
+
+4. Start
+```bash
+npm run start:dev
 ```
 
 If you got Command not found: exp
