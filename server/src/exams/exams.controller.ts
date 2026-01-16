@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
@@ -7,28 +16,37 @@ import { UpdateExamDto } from './dto/update-exam.dto';
 export class ExamsController {
   constructor(private readonly examsService: ExamsService) {}
 
-  @Post()
-  create(@Body() createExamDto: CreateExamDto) {
-    return this.examsService.create(createExamDto);
-  }
-
+  // GET /exams?userId=1
   @Get()
-  findAll() {
-    return this.examsService.findAll();
+  findAll(@Query('userId') userId: string) {
+    return this.examsService.findAll(Number(userId));
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.examsService.findOne(+id);
+  // POST /exams?userId=1
+  @Post()
+  create(
+    @Query('userId') userId: string,
+    @Body() dto: CreateExamDto,
+  ) {
+    return this.examsService.create(Number(userId), dto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateExamDto: UpdateExamDto) {
-    return this.examsService.update(+id, updateExamDto);
+  // PUT /exams/:id?userId=1
+  @Put(':id')
+  update(
+    @Query('userId') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateExamDto,
+  ) {
+    return this.examsService.update(Number(userId), Number(id), dto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.examsService.remove(+id);
+  // PATCH /exams/:id/finish?userId=1
+  @Patch(':id/finish')
+  finish(
+    @Query('userId') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.examsService.finish(Number(userId), Number(id));
   }
 }
