@@ -2,19 +2,23 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { ExamCard } from '@/components/exam/ExamCard';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { examService } from '@/services/examService';
+import { Exam } from '@/types/exam';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [activeTab, setActiveTab] = useState<'week' | 'month'>('week');
+  const [exams, setExams] = useState<Array<Exam>>([]);
 
-  // Sample exam data
-  const exams = [
-    { id: 1, title: 'Computer Programming I', time: '13:00 น.', date: '25 มีนวคม 2568' },
-    { id: 2, title: 'Computer Programming I', time: '13:00 น.', date: '25 มีนวคม 2568' },
-    { id: 3, title: 'Computer Programming I', time: '13:00 น.', date: '25 มีนวคม 2568' },
-  ];
+
+  useEffect(() => {
+    examService.getAll()
+    .then(setExams)
+    .catch(console.error)
+    // Fetch exams based on activeTab if needed
+  }, []);
 
   return (
     <ScrollView
@@ -25,7 +29,7 @@ export default function HomeScreen() {
       <View style={styles.headerSection}>
         <View style={styles.greeting}>
           <Text style={[styles.greetingSmall, { color: '#999' }]}>Hello</Text>
-          <Text style={[styles.greetingName, { color: colors.text }]}>Teerapat</Text>
+          <Text style={[styles.greetingName, { color: 'white' }]}>Teerapat</Text>
         </View>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>987</Text>
@@ -44,7 +48,7 @@ export default function HomeScreen() {
             รายการสอบใกล้ๆ นี้
           </Text>
           <Pressable style={styles.menuButton}>
-            <Text style={styles.menuIcon}>≡</Text>
+            <Text style={styles.menuIcon}>A</Text>
           </Pressable>
         </View>
 
@@ -69,14 +73,14 @@ export default function HomeScreen() {
           <Pressable
             style={[
               styles.tab,
-              activeTab === 'month' && { borderColor: '#FFA500', backgroundColor: '#FFA500' },
+              activeTab === 'month' && { borderColor: Colors.light.yellowprimary, backgroundColor: Colors.light.yellowprimary },
             ]}
             onPress={() => setActiveTab('month')}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === 'month' ? { color: 'white' } : { color: '#FFA500' },
+                activeTab === 'month' ? { color: 'white' } : { color: Colors.light.yellowprimary },
               ]}
             >
               เดือนนี้
@@ -86,14 +90,21 @@ export default function HomeScreen() {
 
         {/* Exam Cards */}
         <View style={styles.cardsContainer}>
-          {exams.map((exam) => (
-            <ExamCard
-              key={exam.id}
-              title={exam.title}
-              time={exam.time}
-              date={exam.date}
-            />
-          ))}
+          {exams.map((exam) => {
+            const dateTime = new Date(exam.examDateTime);
+            const time = dateTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            const date = dateTime.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+            
+            return (
+              <ExamCard
+                key={exam.id}
+                title={exam.name}
+                time={time}
+                date={date}
+                description={exam.description}
+              />
+            );
+          })}
         </View>
       </View>
     </ScrollView>
@@ -103,7 +114,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
+    paddingTop: 40,
   },
   headerSection: {
     flexDirection: 'row',
@@ -124,7 +136,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   badge: {
-    backgroundColor: '#FFA500',
+    backgroundColor: Colors.light.yellowprimary,
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
@@ -140,7 +152,6 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#5B7FC4',
     borderRadius: 12,
     marginBottom: 24,
   },
@@ -153,12 +164,16 @@ const styles = StyleSheet.create({
   },
   examsSection: {
     marginBottom: 40,
+    backgroundColor: '#E8E8E8',
+    borderRadius: 18,
+    padding: 25,
   },
   examsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    fontWeight: '600',
   },
   sectionTitle: {
     fontSize: 18,
@@ -175,8 +190,7 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 25,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -185,10 +199,10 @@ const styles = StyleSheet.create({
   },
   tab: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 6,
+    borderRadius: 13,
     borderWidth: 1,
-    borderColor: '#FFA500',
+    borderColor: Colors.light.yellowprimary,
   },
   tabText: {
     fontSize: 14,

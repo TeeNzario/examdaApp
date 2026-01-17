@@ -6,16 +6,17 @@ interface ExamCardProps {
   title: string;
   time: string;
   date: string;
+  description: string;
   onPress?: () => void;
 }
 
-export function ExamCard({ title, time, date, onPress }: ExamCardProps) {
+export function ExamCard({ title, time, date, description, onPress }: ExamCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
     <Pressable 
-      style={[styles.card, { backgroundColor: colors.background }]}
+      style={[styles.card, { backgroundColor: 'white' }]}
       onPress={onPress}
     >
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
@@ -24,8 +25,9 @@ export function ExamCard({ title, time, date, onPress }: ExamCardProps) {
           <Text style={styles.timeBadgeText}>{time}</Text>
         </View>
         <Text style={[styles.date, { color: colors.text }]}>{date}</Text>
-      </View>
-    </Pressable>
+     </View>
+      <Text style={styles.descriptionText}>{description}</Text>
+   </Pressable>
   );
 }
 
@@ -34,10 +36,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
   },
   title: {
@@ -63,5 +61,10 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 13,
+  },
+  descriptionText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#666',
   },
 });
