@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { ExamCard } from '@/components/exam/ExamCard';
@@ -7,6 +8,7 @@ import { examService } from '@/services/examService';
 import { Exam } from '@/types/exam';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [activeTab, setActiveTab] = useState<'week' | 'month'>('week');
@@ -47,7 +49,7 @@ export default function HomeScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             รายการสอบใกล้ๆ นี้
           </Text>
-          <Pressable style={styles.menuButton}>
+          <Pressable style={styles.menuButton} onPress={() => router.push('/exam')}>
             <Text style={styles.menuIcon}>A</Text>
           </Pressable>
         </View>
