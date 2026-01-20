@@ -17,6 +17,7 @@ import { th } from 'date-fns/locale';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { examService } from '@/services/examService';
+import { registerPushToken } from '@/services/pushNotificationService';
 
 const NOTIFICATION_OPTIONS = [
   { label: 'ก่อน 30 วินาที', minutes: 0.5 }, // 30 seconds for testing
@@ -107,12 +108,15 @@ export default function CreateExamScreen() {
       const reminderMinutes =
         selectedReminders.length > 0 ? selectedReminders[0] : 30;
 
-      await examService.create({
+      const createdExam = await examService.create({
         name: examName,
         description: description || undefined,
         examDateTime: examDate.toISOString(), 
         remindBeforeMinutes: reminderMinutes,
       });
+
+      // Register push token for this exam
+      await registerPushToken(createdExam.id);
 
       alert('สร้างการสอบสำเร็จ');
       router.back();
