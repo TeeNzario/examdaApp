@@ -19,7 +19,7 @@ import { Colors } from '@/constants/theme';
 import { examService } from '@/services/examService';
 
 const NOTIFICATION_OPTIONS = [
-  { label: 'ก่อน 30 นาที', minutes: 30 },
+  { label: 'ก่อน 30 วินาที', minutes: 0.5 }, // 30 seconds for testing
   { label: 'ก่อน 1 ชั่วโมง', minutes: 60 },
   { label: 'ก่อน 1 วัน', minutes: 1440 },
 ];
