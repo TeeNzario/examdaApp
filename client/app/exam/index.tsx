@@ -2,80 +2,38 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { examService } from '@/services/examService';
+import { useEffect, useState } from 'react';
+import { Exam } from '@/types/exam';
 
-interface Exam {
-  id: string;
-  title: string;
-  time: string;
-  date: string;
-  subject: string;
-}
 
 export default function ExamIndexScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const [exams, setExams] = useState<Array<Exam>>([]);
 
   // Sample exam data
-  const exams: Exam[] = [
-    {
-      id: '1',
-      title: 'Computer Programming I',
-      time: '13:00 น.',
-      date: '25 มีนวคม 2568',
-      subject: 'สอบนบน 2 กิ่ง 3',
-    },
-    {
-      id: '2',
-      title: 'Computer Programming I',
-      time: '13:00 น.',
-      date: '25 มีนวคม 2568',
-      subject: 'สอบนบน 2 กิ่ง 3',
-    },
-    {
-      id: '3',
-      title: 'Computer Programming I',
-      time: '13:00 น.',
-      date: '25 มีนวคม 2568',
-      subject: 'สอบนบน 2 กิ่ง 3',
-    },
-    {
-      id: '4',
-      title: 'Computer Programming I',
-      time: '13:00 น.',
-      date: '25 มีนวคม 2568',
-      subject: 'สอบนบน 2 กิ่ง 3',
-    },
-    {
-      id: '5',
-      title: 'Computer Programming I',
-      time: '13:00 น.',
-      date: '25 มีนวคม 2568',
-      subject: 'สอบนบน 2 กิ่ง 3',
-    },
-    {
-      id: '6',
-      title: 'Computer Programming I',
-      time: '13:00 น.',
-      date: '25 มีนวคม 2568',
-      subject: 'สอบนบน 2 กิ่ง 3',
-    },
-  ];
-
+  useEffect(() => {
+    examService.getAll()
+      .then((data) => setExams(data))
+      .catch((error) => console.error(error));
+  }
+  , []);
   const handleBackPress = () => {
-    router.back();
+    router.replace('/home');
   };
 
   const handleCreateExam = () => {
-    router.push('/exam/create');
+    router.replace('/exam/create');
   };
 
   const handleEditExam = (id: string) => {
-    router.push(`/exam/${id}`);
+    router.replace(`/exam/${id}`);
   };
 
-  const handleStartExam = (id: string) => {
-    router.push(`/exam/${id}`);
+  const handleFinishExam = (id: string) => {
+    // router.push(`/exam/${id}`); //change later to exam taking screen
   };
 
   return (
@@ -85,36 +43,44 @@ export default function ExamIndexScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {exams.map((exam) => (
+        {exams.map((exam) => { 
+          const dateTime = new Date(exam.examDateTime);
+          const time = dateTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+          const date = dateTime.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+
+          return (
           <View key={exam.id} style={styles.examCard}>
             <View style={styles.cardContent}>
               <View style={styles.titleRow}>
                 <View style={styles.titleSection}>
-                  <Text style={styles.examTitle}>{exam.title}</Text>
+                  <Text style={styles.examTitle}>{exam.name}</Text>
                   <View style={styles.timeAndDate}>
                     <View style={styles.timeBadge}>
-                      <Text style={styles.timeBadgeText}>{exam.time}</Text>
+                      <Text style={styles.timeBadgeText}>{time}</Text>
                     </View>
-                    <Text style={styles.dateText}>{exam.date}</Text>
+                    <Text style={styles.dateText}>{date}</Text>
                   </View>
-                  <Text style={styles.subjectText}>{exam.subject}</Text>
+                  <Text style={styles.subjectText}>{exam.description}</Text>
                 </View>
+                <View style={{ flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
                 <Pressable
                   style={styles.editButton}
-                  onPress={() => handleEditExam(exam.id)}
+                  onPress={() => handleEditExam(exam.id.toString())}
                 >
                   <Text style={styles.editIcon}>✎</Text>
                 </Pressable>
-              </View>
-            </View>
-            <Pressable
+              <Pressable
               style={styles.startButton}
-              onPress={() => handleStartExam(exam.id)}
+              onPress={() => handleFinishExam(exam.id.toString())}
             >
-              <Text style={styles.startButtonText}>เริ่มสอบ</Text>
+              <Text style={styles.startButtonText}>เสร็จแล้ว</Text>
             </Pressable>
+            </View>
+             </View>
+            </View>
           </View>
-        ))}
+        );
+    })}
       </ScrollView>
 
       {/* Bottom Action Bar */}
@@ -219,6 +185,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     marginLeft: 8,
+    marginTop: 20,
   },
   startButtonText: {
     color: 'white',

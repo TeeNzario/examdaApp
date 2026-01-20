@@ -50,7 +50,7 @@ export default function CreateExamScreen() {
     );
   };
 
-  // ✅ format only for UI
+  //  format only for UI
   const formatDateTime = (date: Date) => {
     const buddhistYear = date.getFullYear() + 543;
     return (
@@ -110,7 +110,7 @@ export default function CreateExamScreen() {
       await examService.create({
         name: examName,
         description: description || undefined,
-        examDateTime: examDate.toISOString(), // ✅ backend-safe
+        examDateTime: examDate.toISOString(), 
         remindBeforeMinutes: reminderMinutes,
       });
 
@@ -201,7 +201,7 @@ export default function CreateExamScreen() {
 
       {/* Action Bar */}
       <View style={styles.actionBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={() => router.replace('/exam')}>
           <Text style={styles.backButtonText}>BACK</Text>
         </Pressable>
         <Pressable

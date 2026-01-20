@@ -7,14 +7,53 @@ import {
   StyleSheet,
   StatusBar,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { login } from '@/services/authService';
 
 const LoginScreen = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleLogin = () => {
-    console.log('Login pressed', { username, password });
-    // เพิ่มโค้ดสำหรับการ login ตรงนี้
+  const router = useRouter();
+
+  const handleLogin = async () => {
+    // Clear previous errors
+    setError('');
+
+    // Validation
+    if (!username.trim() || !password.trim()) {
+      setError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await login(username, password);
+      router.replace('/home');
+    } catch (error) {
+      console.error('Login failed:', error);
+      
+      // Check if it's an authentication error
+      if (error instanceof Error) {
+        const errorMessage = error.message.toLowerCase();
+        if (
+          errorMessage.includes('unauthorized') ||
+          errorMessage.includes('invalid') ||
+          errorMessage.includes('incorrect') ||
+          errorMessage.includes('401')
+        ) {
+          setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        } else {
+          setError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+        }
+      } else {
+        setError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -29,6 +68,13 @@ const LoginScreen = () => {
 
       {/* Form */}
       <View style={styles.formContainer}>
+        {/* Error Message */}
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
         {/* Username Input */}
         <TextInput
           style={styles.input}
@@ -37,6 +83,7 @@ const LoginScreen = () => {
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
+          editable={!isLoading}
         />
 
         {/* Password Input */}
@@ -48,11 +95,18 @@ const LoginScreen = () => {
           onChangeText={setPassword}
           secureTextEntry
           autoCapitalize="none"
+          editable={!isLoading}
         />
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>เริ่มเลย</Text>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'กำลังเข้าสู่ระบบ...' : 'เริ่มเลย'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -85,6 +139,19 @@ const styles = StyleSheet.create({
   formContainer: {
     width: '100%',
   },
+  errorContainer: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
   input: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -100,6 +167,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: '#FFFFFF',

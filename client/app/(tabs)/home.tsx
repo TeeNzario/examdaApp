@@ -33,9 +33,9 @@ export default function HomeScreen() {
           <Text style={[styles.greetingSmall, { color: '#999' }]}>Hello</Text>
           <Text style={[styles.greetingName, { color: 'white' }]}>Teerapat</Text>
         </View>
-        <View style={styles.badge}>
+        {/* <View style={styles.badge}>
           <Text style={styles.badgeText}>987</Text>
-        </View>
+        </View> */}
       </View>
 
       {/* Good Morning Section */}
@@ -49,7 +49,7 @@ export default function HomeScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             รายการสอบใกล้ๆ นี้
           </Text>
-          <Pressable style={styles.menuButton} onPress={() => router.push('/exam')}>
+          <Pressable style={styles.menuButton} onPress={() => router.replace('/exam')}>
             <Text style={styles.menuIcon}>A</Text>
           </Pressable>
         </View>

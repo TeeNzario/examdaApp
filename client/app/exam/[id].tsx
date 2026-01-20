@@ -1,10 +1,14 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { examService } from '@/services/examService';
 import { Exam } from '@/types/exam';
+
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
+import { th } from 'date-fns/locale';
 
 export default function EditExamScreen() {
   const router = useRouter();
@@ -20,8 +24,12 @@ export default function EditExamScreen() {
   // Edit states
   const [examName, setExamName] = useState('');
   const [description, setDescription] = useState('');
-  const [examDateTime, setExamDateTime] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+
+  const [examDate, setExamDate] = useState<Date | null>(null);
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
     loadExam();
@@ -37,7 +45,7 @@ export default function EditExamScreen() {
         setExam(foundExam);
         setExamName(foundExam.name);
         setDescription(foundExam.description || '');
-        setExamDateTime(foundExam.examDateTime);
+        setExamDate(new Date(foundExam.examDateTime));
       }
     } catch (error) {
       console.error('Failed to load exam:', error);
@@ -48,27 +56,51 @@ export default function EditExamScreen() {
   };
 
   const handleSave = async () => {
-    if (!examName.trim() || !examDateTime.trim()) {
+    if (!examName.trim() || !examDate) {
       alert('กรุณากรอกชื่อการสอบและเลือกวัน-เวลาสอบ');
       return;
     }
 
-    if (!exam) return;
+    if (!exam || exam.isDone) {
+      alert('ไม่สามารถแก้ไขการสอบที่ถูกทำเครื่องหมายว่าเสร็จแล้ว');
+      return;
+    }
 
     setIsSaving(true);
     try {
+      console.log('Saving exam:', exam.id, {
+        name: examName,
+        description,
+        examDateTime: examDate.toISOString(),
+      });
+
       await examService.update(exam.id, {
         name: examName,
         description: description || undefined,
-        examDateTime,
+        examDateTime: examDate.toISOString(),
       });
 
       alert('บันทึกการเปลี่ยนแปลงสำเร็จ');
       setIsEditing(false);
       loadExam();
+      router.back();
+
     } catch (error) {
       console.error('Failed to save exam:', error);
-      alert('เกิดข้อผิดพลาดในการบันทึก');
+      
+      // Better error message
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        if (errorMessage.includes('Forbidden')) {
+          alert('ไม่สามารถแก้ไขการสอบนี้ได้ คุณอาจไม่ใช่เจ้าของการสอบ หรือสอบแล้ว');
+        } else if (errorMessage.includes('not found')) {
+          alert('ไม่พบการสอบนี้');
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + errorMessage);
+        }
+      } else {
+        alert('เกิดข้อผิดพลาดในการบันทึก');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -78,9 +110,54 @@ export default function EditExamScreen() {
     if (exam) {
       setExamName(exam.name);
       setDescription(exam.description || '');
-      setExamDateTime(exam.examDateTime);
+      setExamDate(new Date(exam.examDateTime));
       setIsEditing(false);
     }
+  };
+
+  const formatDateTime = (date: Date) => {
+    const buddhistYear = date.getFullYear() + 543;
+    return (
+      format(date, "HH:mm 'น.' d MMMM", { locale: th }) +
+      ` ${buddhistYear}`
+    );
+  };
+
+  const onChangeDate = (_: any, selected?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (!selected) return;
+
+    setExamDate((prev) => {
+      const base = prev ?? new Date();
+      const newDate = new Date(base);
+      newDate.setFullYear(
+        selected.getFullYear(),
+        selected.getMonth(),
+        selected.getDate()
+      );
+      return newDate;
+    });
+
+    // On Android, automatically show time picker after date
+    if (Platform.OS === 'android') {
+      setTimeout(() => setShowTimePicker(true), 100);
+    }
+  };
+
+  const onChangeTime = (_: any, selected?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    if (!selected) return;
+
+    setExamDate((prev) => {
+      const base = prev ?? new Date();
+      const newDate = new Date(base);
+      newDate.setHours(selected.getHours(), selected.getMinutes());
+      return newDate;
+    });
   };
 
   if (isLoading) {
@@ -111,6 +188,13 @@ export default function EditExamScreen() {
   return (
     <View style={[styles.container, { backgroundColor: '#5B7FC4' }]}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Status Badge */}
+        {exam.isDone && (
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusBadgeText}>✓ สอบแล้ว</Text>
+          </View>
+        )}
+
         {/* Card Container */}
         <View style={styles.card}>
           {/* Exam Name Section */}
@@ -154,13 +238,13 @@ export default function EditExamScreen() {
             {isEditing ? (
               <Pressable
                 style={styles.input}
-                onPress={() => setShowDateTimePicker(true)}
+                onPress={() => setShowDatePicker(true)}
               >
-                <Text style={styles.inputText}>{examDateTime || 'เลือกวัน-เวลา'}</Text>
+                <Text style={styles.inputText}>{examDate ? formatDateTime(examDate) : 'เลือกวัน-เวลา'}</Text>
               </Pressable>
             ) : (
               <View style={styles.displayValue}>
-                <Text style={styles.displayText}>{examDateTime}</Text>
+                <Text style={styles.displayText}>{examDate ? formatDateTime(examDate) : '-'}</Text>
               </View>
             )}
           </View>
@@ -177,49 +261,80 @@ export default function EditExamScreen() {
           <Text style={styles.backButtonText}>{isEditing ? 'ยกเลิก' : 'BACK'}</Text>
         </Pressable>
         <Pressable
-          style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+          style={[
+            styles.saveButton,
+            (isSaving || exam.isDone) && styles.saveButtonDisabled,
+          ]}
           onPress={isEditing ? handleSave : () => setIsEditing(true)}
-          disabled={isSaving}
+          disabled={isSaving || exam.isDone}
         >
           <Text style={styles.saveButtonText}>
-            {isSaving ? 'บันทึก...' : isEditing ? 'SAVE' : 'EDIT'}
+            {isSaving ? 'บันทึก...' : exam.isDone ? 'สอบแล้ว' : isEditing ? 'SAVE' : 'EDIT'}
           </Text>
         </Pressable>
       </View>
+       {/* Native Pickers */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={examDate ?? new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onChangeDate}
+          locale="th-TH"
+        />
+      )}
 
-      {/* Date Time Picker Modal */}
-      <Modal
-        visible={showDateTimePicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowDateTimePicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>เลือกวัน-เวลาสอบ</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="13:00 น. 25 ธันวาคม 2568"
-              value={examDateTime}
-              onChangeText={setExamDateTime}
-            />
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={styles.modalButton}
-                onPress={() => setShowDateTimePicker(false)}
-              >
-                <Text style={styles.modalButtonText}>ยืนยัน</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.modalCancelButton]}
-                onPress={() => setShowDateTimePicker(false)}
-              >
-                <Text style={styles.modalCancelButtonText}>ยกเลิก</Text>
-              </Pressable>
-            </View>
-          </View>
+      {showTimePicker && (
+        <DateTimePicker
+          value={examDate ?? new Date()}
+          mode="time"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onChangeTime}
+          locale="th-TH"
+        />
+      )}
+
+      {/* iOS Date Picker Overlay */}
+      {Platform.OS === 'ios' && showDatePicker && (
+        <View style={styles.iosOverlay}>
+          <Pressable
+            style={styles.iosButton}
+            onPress={() => {
+              setShowDatePicker(false);
+              setShowTimePicker(true);
+            }}
+          >
+            <Text style={styles.iosButtonText}>ถัดไป</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.iosButton, styles.iosCancelButton]}
+            onPress={() => setShowDatePicker(false)}
+          >
+            <Text style={styles.iosCancelButtonText}>ยกเลิก</Text>
+          </Pressable>
         </View>
-      </Modal>
+      )}
+
+      {/* iOS Time Picker Overlay */}
+      {Platform.OS === 'ios' && showTimePicker && (
+        <View style={styles.iosOverlay}>
+          <Pressable
+            style={styles.iosButton}
+            onPress={() => setShowTimePicker(false)}
+          >
+            <Text style={styles.iosButtonText}>เสร็จสิ้น</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.iosButton, styles.iosCancelButton]}
+            onPress={() => {
+              setShowTimePicker(false);
+              setExamDate(null);
+            }}
+          >
+            <Text style={styles.iosCancelButtonText}>ยกเลิก</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -384,5 +499,18 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 14,
     fontWeight: '700',
+  },
+  statusBadge: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  statusBadgeText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

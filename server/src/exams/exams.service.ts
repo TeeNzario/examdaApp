@@ -9,7 +9,10 @@ export class ExamsService {
 
   async findAll(userId: number) {
     return this.prisma.exam.findMany({
-      where: { userId },
+      where: { 
+        userId,
+        isDone: false,
+       },
       include: { reminders: true },
       orderBy: { examDateTime: 'asc' },
     });
