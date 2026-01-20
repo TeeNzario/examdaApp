@@ -5,9 +5,10 @@ import { ExamsModule } from './exams/exams.module';
 import { PrismaService } from './prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [ExamsModule, PrismaModule, ConfigModule.forRoot({ isGlobal: true })],
+  imports: [ExamsModule, PrismaModule, NotificationsModule, ConfigModule.forRoot({ isGlobal: true })],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

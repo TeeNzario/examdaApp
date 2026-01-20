@@ -205,6 +205,7 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     borderWidth: 1,
     borderColor: Colors.light.yellowprimary,
+    backgroundColor: '#FFFFFF',
   },
   tabText: {
     fontSize: 14,
